@@ -31,7 +31,8 @@ class HBNBCommand(cmd.Cmd):
             }
 
     def preloop(self):
-        """Prints if isatty is false"""
+        """Prints prompt if isatty boolean is False 
+        which means stdin not co to a terminal"""
         if not sys.__stdin__.isatty():
             print('(hbnb)')
 
@@ -41,7 +42,7 @@ class HBNBCommand(cmd.Cmd):
         Usage: <class name>.<command>([<id> [<*args> or <**kwargs>]])
         (Brackets denote optional fields in usage example.)
         """
-        _cmd = _cls = _id = _args = ''  # initialize line elements
+        _cmd = _cls = _id = _args = ''  # initialize variables to empty str
 
         # scan for general formating - i.e '.', '(', ')'
         if not ('.' in line and '(' in line and ')' in line):
@@ -50,7 +51,8 @@ class HBNBCommand(cmd.Cmd):
         try:  # parse line left to right
             pline = line[:]  # parsed line
 
-            # isolate <class name>
+            # find returns index of 1st occurence of parameter or -1 if not found
+            # to isolate <class name>
             _cls = pline[:pline.find('.')]
 
             # isolate and validate <command>
@@ -87,7 +89,9 @@ class HBNBCommand(cmd.Cmd):
             return line
 
     def postcmd(self, stop, line):
-        """Prints if isatty is false"""
+        """Prints if isatty is false
+        to print the prompt also in non-
+        interactive mode"""
         if not sys.__stdin__.isatty():
             print('(hbnb) ', end='')
         return stop
@@ -121,6 +125,7 @@ class HBNBCommand(cmd.Cmd):
         elif args not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
+        #if arg in classes, new instance created
         new_instance = HBNBCommand.classes[args]()
         storage.save()
         print(new_instance.id)
@@ -132,7 +137,8 @@ class HBNBCommand(cmd.Cmd):
         print("[Usage]: create <className>\n")
 
     def do_show(self, args):
-        """ Method to show an individual object """
+        """ Method to show an individual object 
+        based on its class name and ID"""
         new = args.partition(" ")
         c_name = new[0]
         c_id = new[2]
