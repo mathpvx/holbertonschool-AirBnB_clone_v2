@@ -123,17 +123,25 @@ class HBNBCommand(cmd.Cmd):
             print("** class name missing **")
             return
 
+        # check if the class name doesn't match one of the keys of 
+        # HBNBCommand.classes dictionnary variable
         elif args.split(" ")[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
 
+        # parse the parameters 
         params = {}
         param_list = args.split()[1:]
+        # iterates through the parameters
         for p in param_list:
             if "=" in p:
+                # defines key before '=' and value after '='
                 key, value = p.split("=")
+                # if value is a string
                 if value.startswith('"') and value.endswith('"'):
+                    # removes the double quotes
                     value = value[1:-1]
+                    # replace _ with ' ' to make it human readable
                     value = value.replace("_", " ")
                 try:
                     if "." in value:
