@@ -1,13 +1,18 @@
 #!/usr/bin/python3
 """This module defines a class User"""
-from models.base_model import BaseModel, Base
-from sqlalchemy import Column, String
+from models.base_model import BaseModel
+
 
 
 class User(BaseModel):
     """This class defines a user by various attributes"""
     __tablename__ = 'users'
-    email = column(string(128), nullable=False)
-    password = column(string(128), nullable=False)
-    first_name = column(string(128), nullable=True)
-    last_name = column(string(128), nullable=True)
+    
+    email = ''
+    password = ''
+    first_name = None
+    last_name = None
+
+    def __init__(self, *args, **kwargs):
+        """Initializes User instance"""
+        super().__init__(*args, **kwargs)
