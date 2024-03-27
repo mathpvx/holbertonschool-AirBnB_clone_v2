@@ -31,7 +31,7 @@ class HBNBCommand(cmd.Cmd):
             }
 
     def preloop(self):
-        """Prints prompt if isatty boolean is False 
+        """Prints prompt if isatty boolean is False
         which means stdin not co to a terminal"""
         if not sys.__stdin__.isatty():
             print('(hbnb)')
@@ -51,7 +51,8 @@ class HBNBCommand(cmd.Cmd):
         try:  # parse line left to right
             pline = line[:]  # parsed line
 
-            # find returns index of 1st occurence of parameter or -1 if not found
+            # find returns index of 1st occurence
+            # of parameter or -1 if not found
             # to isolate <class name>
             _cls = pline[:pline.find('.')]
 
@@ -75,7 +76,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] == '{' and pline[-1] =='}'\
+                    if pline[0] == '{' and pline[-1] == '}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -123,13 +124,13 @@ class HBNBCommand(cmd.Cmd):
             print("** class name missing **")
             return
 
-        # check if the class name doesn't match one of the keys of 
+        # check if the class name doesn't match one of the keys of
         # HBNBCommand.classes dictionnary variable
         elif args.split(" ")[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
 
-        # parse the parameters 
+        # parse the parameters
         params = {}
         param_list = args.split()[1:]
         # iterates through the parameters
@@ -163,7 +164,7 @@ class HBNBCommand(cmd.Cmd):
         print("[Usage]: create <className>\n")
 
     def do_show(self, args):
-        """ Method to show an individual object 
+        """ Method to show an individual object
         based on its class name and ID"""
         new = args.partition(" ")
         c_name = new[0]
@@ -238,12 +239,12 @@ class HBNBCommand(cmd.Cmd):
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all(HBNBCommand.classes[args]).items():
                 if k.split('.')[0] == args:
-                    print_list.append(str(v))
+                    print_list.append(v.to_dict())
         else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
+            for k, v in storage.all().items():
+                print_list.append(v.to_dict())
 
         print(print_list)
 
@@ -351,6 +352,7 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
+
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()
