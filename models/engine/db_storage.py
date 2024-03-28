@@ -10,6 +10,7 @@ from models.city import City
 
 class DBStorage:
     """This class manages storage of hbnb models in a database"""
+    # hasn't been initialized yet
     __engine = None
     __session = None
 
