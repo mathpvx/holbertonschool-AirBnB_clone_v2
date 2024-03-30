@@ -13,6 +13,10 @@ class test_User(test_basemodel):
         super().__init__(*args, **kwargs)
         self.name = "User"
         self.value = User
+        self.first_name = "Charlie"
+        self.last_name = "Lars"
+        self.email = "test@mail.com"
+        self.password = "GREGE643"
 
     @classmethod
     def setUpClass(cls):
