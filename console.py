@@ -2,6 +2,7 @@
 """ Console Module """
 import cmd
 import sys
+import os
 from models.base_model import BaseModel
 from models.__init__ import storage
 from models.user import User
@@ -10,6 +11,8 @@ from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+from models.engine.db_storage import DBStorage
+from models.engine.file_storage import FileStorage
 
 
 class HBNBCommand(cmd.Cmd):
@@ -31,8 +34,7 @@ class HBNBCommand(cmd.Cmd):
             }
 
     def preloop(self):
-        """Prints prompt if isatty boolean is False
-        which means stdin not co to a terminal"""
+        """Prints if isatty is false"""
         if not sys.__stdin__.isatty():
             print('(hbnb)')
 
@@ -42,7 +44,7 @@ class HBNBCommand(cmd.Cmd):
         Usage: <class name>.<command>([<id> [<*args> or <**kwargs>]])
         (Brackets denote optional fields in usage example.)
         """
-        _cmd = _cls = _id = _args = ''  # initialize variables to empty str
+        _cmd = _cls = _id = _args = ''  # initialize line elements
 
         # scan for general formating - i.e '.', '(', ')'
         if not ('.' in line and '(' in line and ')' in line):
@@ -51,9 +53,7 @@ class HBNBCommand(cmd.Cmd):
         try:  # parse line left to right
             pline = line[:]  # parsed line
 
-            # find returns index of 1st occurence
-            # of parameter or -1 if not found
-            # to isolate <class name>
+            # isolate <class name>
             _cls = pline[:pline.find('.')]
 
             # isolate and validate <command>
@@ -90,9 +90,7 @@ class HBNBCommand(cmd.Cmd):
             return line
 
     def postcmd(self, stop, line):
-        """Prints if isatty is false
-        to print the prompt also in non-
-        interactive mode"""
+        """Prints if isatty is false"""
         if not sys.__stdin__.isatty():
             print('(hbnb) ', end='')
         return stop
@@ -118,42 +116,38 @@ class HBNBCommand(cmd.Cmd):
         """ Overrides the emptyline method of CMD """
         pass
 
+    def try_convert(self, value):
+        """The helper function that converts parameters values
+        into int ou floats if possible"""
+        try:
+            return int(value)
+        except ValueError:
+            try:
+                return float(value)
+            except ValueError:
+                return value
+
     def do_create(self, args):
-        """Create an object of any class"""
+        """ Create an object of any class"""
         if not args:
             print("** class name missing **")
             return
 
-        # check if the class name doesn't match one of the keys of
-        # HBNBCommand.classes dictionnary variable
         elif args.split(" ")[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
 
-        # parse the parameters
         params = {}
-        param_list = args.split()[1:]
-        # iterates through the parameters
-        for p in param_list:
-            if "=" in p:
-                # defines key before '=' and value after '='
-                key, value = p.split("=")
-                # if value is a string
-                if value.startswith('"') and value.endswith('"'):
-                    # removes the double quotes
-                    value = value[1:-1]
-                    # replace _ with ' ' to make it human readable
+        cmd = args.split(" ")
+        if len(cmd) >= 2:
+            for word in cmd[1:]:
+                key = word.split("=")[0]
+                value = word.split("=")[1].strip('"')
+                if "_" in value:
                     value = value.replace("_", " ")
-                try:
-                    if "." in value:
-                        params[key] = float(value)
-                    else:
-                        params[key] = int(value)
-                except ValueError:
-                    params[key] = value
+                params[key] = value
 
-        class_name = args.split(" ")[0]
-        new_instance = HBNBCommand.classes[class_name](**params)
+        new_instance = HBNBCommand.classes[cmd[0]](**params)
         storage.new(new_instance)
         print(new_instance.id)
         storage.save()
@@ -164,8 +158,7 @@ class HBNBCommand(cmd.Cmd):
         print("[Usage]: create <className>\n")
 
     def do_show(self, args):
-        """ Method to show an individual object
-        based on its class name and ID"""
+        """ Method to show an individual object """
         new = args.partition(" ")
         c_name = new[0]
         c_id = new[2]
@@ -193,7 +186,7 @@ class HBNBCommand(cmd.Cmd):
             print("** no instance found **")
 
     def help_show(self):
-        """ Help with information for the show command """
+        """ Help information for the show command """
         print("Shows an individual instance of a class")
         print("[Usage]: show <className> <objectId>\n")
 
@@ -234,17 +227,22 @@ class HBNBCommand(cmd.Cmd):
         """ Shows all objects, or all objects of a class"""
         print_list = []
 
+        if isinstance(storage, DBStorage):
+            all_objs = storage.all().items()
+        elif isinstance(storage, FileStorage):
+            all_objs = storage._FileStorage__objects.items()
+
         if args:
             args = args.split(' ')[0]  # remove possible trailing args
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage.all(HBNBCommand.classes[args]).items():
+            for k, v in all_objs:
                 if k.split('.')[0] == args:
-                    print_list.append(v.to_dict())
+                    print_list.append(str(v))
         else:
-            for k, v in storage.all().items():
-                print_list.append(v.to_dict())
+            for k, v in all_objs:
+                print_list.append(str(v))
 
         print(print_list)
 
@@ -256,7 +254,13 @@ class HBNBCommand(cmd.Cmd):
     def do_count(self, args):
         """Count current number of class instances"""
         count = 0
-        for k, v in storage._FileStorage__objects.items():
+
+        if isinstance(storage, DBStorage):
+            all_objs = storage.all()
+        elif isinstance(storage, FileStorage):
+            all_objs = storage._FileStorage__objects.items()
+
+        for k, v in all_objs:
             if args == k.split('.')[0]:
                 count += 1
         print(count)
@@ -316,7 +320,7 @@ class HBNBCommand(cmd.Cmd):
             if not att_name and args[0] != ' ':
                 att_name = args[0]
             # check for quoted val arg
-            if args[2] and args[2][0] == '\"':
+            if args[2] and args[2][0] != '\"':
                 att_val = args[2][1:args[2].find('\"', 1)]
 
             # if att_val was not quoted arg
